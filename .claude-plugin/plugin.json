@@ -1,0 +1,7 @@
+{
+  "name": "jj-spr-workflow",
+  "version": "0.1.0",
+  "description": "Skills for Jujutsu + SPR stacked PR workflows on GitHub",
+  "keywords": ["jujutsu", "jj", "spr", "stacked-prs", "github"],
+  "license": "MIT"
+}
