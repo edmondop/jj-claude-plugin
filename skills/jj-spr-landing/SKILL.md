@@ -107,8 +107,11 @@ Use `-s` (not `-r`) to rebase the entire subtree.
 ### Step 4: Update remaining PRs
 
 ```bash
-jj spr diff -r <next-change>::<top-of-stack>
+jj spr diff -m "rebased after landing" -r <next-change>::<top-of-stack>
 ```
+
+**Always pass `-m`** — these are existing PRs being updated, and without
+`-m` SPR prompts interactively.
 
 **What this does and does NOT do:**
 
@@ -146,14 +149,14 @@ jj spr land -r <change-1>
 jj git fetch
 jj abandon <change-1>
 jj rebase -s <change-2> -d main@origin
-jj spr diff -r <change-2>::<top>
+jj spr diff -m "rebased after landing" -r <change-2>::<top>
 
 # Land second
 jj spr land -r <change-2>
 jj git fetch
 jj abandon <change-2>
 jj rebase -s <change-3> -d main@origin
-jj spr diff -r <change-3>::<top>
+jj spr diff -m "rebased after landing" -r <change-3>::<top>
 
 # Continue until done
 ```

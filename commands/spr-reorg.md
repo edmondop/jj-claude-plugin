@@ -13,15 +13,28 @@ already exist.
 **First:** Check if you're in a jj workspace (`.jj/repo` is a file, not a
 directory). If so, `cd` to the main colocated repo before proceeding.
 
-Use the `jj-spr-reorganize` skill. This is the most dangerous operation —
-follow the skill exactly.
+Use the `jj-spr-reorganize` skill. Follow its decision tree to determine
+which PRs need to be closed:
 
-1. List current PRs with `jj spr list`
-2. Close all affected PRs: `gh pr close <N> --delete-branch`
-3. Strip `Pull Request:` URLs from all affected commit messages
-4. Perform the reorganization (rebase, squash, split, etc.)
-5. Verify the new stack shape with `jj log`
-6. Recreate PRs with `jj spr diff -r <range>`
-7. Reposition `@` with `jj new <top-of-stack>`
+- **Removing a change** → close only that change's PR with `jj spr close`
+- **Splitting a change** → the original PR stays on one half, new half gets
+  a new PR automatically
+- **Reordering changes** → close PRs for changes whose position changed
+- **Full restructuring** → close all PRs with `jj spr close -r <range>`
 
-**Never skip the close-and-clean steps.** There is no safe shortcut.
+**Always use `jj spr close`, NOT `gh pr close`.** `jj spr close` strips
+the `Pull Request:` URL from the commit message and deletes both the head
+branch and synthetic base branch. `gh pr close` does none of this.
+
+**Always pass `-m` when updating existing PRs:**
+```bash
+jj spr diff -m "reorganized stack" -r <bottom>::<top>
+```
+Without `-m`, `jj spr diff` prompts interactively when updating (not
+creating) PRs, which blocks automation.
+
+**Always dry-run before pushing:**
+```bash
+jj spr diff --dry-run -r <bottom>::<top>
+```
+Verify changes with URLs show "UPDATE" and changes without show "CREATE".

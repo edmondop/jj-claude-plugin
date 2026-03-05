@@ -6,8 +6,11 @@ description: Strip stale Pull Request URLs from jj commit messages
 # /spr-clean
 
 Remove `Pull Request:` URLs from commit messages in a range of jj changes.
-Useful before re-running `jj spr diff`, after manually closing PRs, or as
-part of a stack reorganization.
+
+**Prefer `jj spr close -r <change>` instead** — it closes the PR, strips
+the URL, and deletes both head and synthetic base branches in one command.
+Use `/spr-clean` only when PRs were already closed via `gh pr close` or
+the GitHub UI (which do NOT strip URLs from commit messages).
 
 ## Instructions
 

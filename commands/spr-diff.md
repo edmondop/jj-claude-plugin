@@ -19,6 +19,10 @@ Use the `jj-spr-stacked-prs` skill to manage PRs.
 3. Determine the correct range (single change vs. stack)
 4. Run `jj spr diff --dry-run -r <range>` to preview what would happen
 5. If the dry-run output looks correct, run `jj spr diff -r <range>`
+   - **When updating existing PRs**, always pass `-m "reason"` to avoid
+     an interactive prompt: `jj spr diff -m "updated" -r <range>`
+   - When creating new PRs only, `-m` is not needed (SPR uses the commit
+     description as the PR body)
 6. Report the created/updated PR URLs
 
 If the user specifies a revision, use it. Otherwise, analyze the stack and

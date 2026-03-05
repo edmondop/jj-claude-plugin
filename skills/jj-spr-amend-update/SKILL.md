@@ -87,8 +87,12 @@ This lets the user review what changed with `jj diff -r @-` before pushing.
 ### Step 5: Update the PR
 
 ```bash
-jj spr diff -r <change-id>
+jj spr diff -m "addressed feedback" -r <change-id>
 ```
+
+**Always pass `-m`** when updating an existing PR. Without it, SPR prompts
+interactively for an update message, blocking automation. The `-m` value
+is used as the update comment, not the PR description.
 
 SPR pushes a new synthetic commit to the PR branch. GitHub shows it as an
 incremental update — reviewers see only the new changes in the diff.
@@ -110,7 +114,7 @@ When modifying a change in the **middle** of a stack:
 2. After editing, descendants in the stack are automatically rebased by jj
 3. Update the **full range** to ensure all PRs reflect the rebase:
    ```bash
-   jj spr diff -r <modified-change>::<top-of-stack>
+   jj spr diff -m "updated mid-stack change" -r <modified-change>::<top-of-stack>
    ```
 4. Verify all PRs in the stack have correct diffs
 
@@ -145,7 +149,7 @@ If multiple PRs in a stack have review feedback:
 3. Move to the next change up, amend it
 4. After all edits, update the full range:
    ```bash
-   jj spr diff -r <first-modified>::<top-of-stack>
+   jj spr diff -m "addressed review feedback" -r <first-modified>::<top-of-stack>
    ```
 
 Working bottom-up prevents redundant rebases.

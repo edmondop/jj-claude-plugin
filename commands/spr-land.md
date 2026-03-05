@@ -21,8 +21,8 @@ Use the `jj-spr-landing` skill to guide the landing process.
 5. `jj abandon <landed-change-id>` (now empty, content is on master)
 6. `jj rebase -r @ -d main@origin` (single PR) or
    `jj rebase -s <next-change> -d main@origin` (stack -- note `-s` not `-r`)
-7. If part of a stack: `jj spr diff -r <next-change>::<top>` to update
-   synthetic base content
+7. If part of a stack: `jj spr diff -m "rebased after landing" -r <next-change>::<top>`
+   to update synthetic base content (always pass `-m` when updating)
 
 **Always land bottom-up** in a stack. Warn the user if they're trying to
 land from the middle or top.

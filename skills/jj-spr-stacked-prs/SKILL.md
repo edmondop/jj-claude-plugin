@@ -101,7 +101,9 @@ Before running any SPR command:
 
 1. **Strip stale PR URLs** — if you reorganized the stack (rebase/squash),
    every commit may have `Pull Request: https://...` lines from old PRs.
-   Run `jj desc <change-id> -m "<clean message>"` for each affected commit.
+   **Prefer `jj spr close -r <change>`** to close a PR cleanly (strips URL
+   + deletes branches). If PRs were already closed via GitHub, manually
+   strip URLs with `jj desc <change-id> -m "<clean message>"`.
 
 2. **Identify immutable commits** — look for `◆` in `jj log`. If an
    immutable commit already has its PR, exclude it from the range.
@@ -183,6 +185,26 @@ SPR creates one PR per commit with automatic base branch chaining via
 synthetic base branches. Do NOT manually change PR base branches — SPR's
 synthetic commits handle the diffs correctly.
 
+## CRITICAL: Always Pass `-m` When Updating Existing PRs
+
+When `jj spr diff` updates a PR (not creating a new one), it prompts
+interactively for an update message if `-m` is not provided. **Always
+pass `-m`** to avoid blocking:
+
+```bash
+# Creating new PRs — no -m needed (uses commit description)
+jj spr diff -r <range>
+
+# Updating existing PRs — MUST pass -m
+jj spr diff -m "updated after rebase" -r <range>
+
+# Mixed create + update — pass -m (safe for both)
+jj spr diff -m "stack update" -r <range>
+```
+
+**When in doubt, always pass `-m`.** It's harmless for creates and
+required for updates.
+
 ## Common Mistakes
 
 - **Never use `jj git push` + `gh pr create`** for PR workflows. Always
@@ -197,7 +219,11 @@ synthetic commits handle the diffs correctly.
 - **Never use `jj spr diff --all`** without verifying no immutable commits
   with existing PRs are in the ancestry path.
 - **Never forget to clean commit messages** after closing old PRs and
-  before running SPR again.
+  before running SPR again. Use `jj spr close` to close PRs cleanly
+  (strips URLs automatically). Only strip manually if PRs were closed
+  via `gh pr close` or the GitHub UI.
+- **Never omit `-m` when updating existing PRs** — `jj spr diff` prompts
+  interactively for an update message, blocking automation.
 - **Never include an immutable commit in an SPR range twice** — it will
   create duplicate PRs since SPR can't write the URL back.
 - **Never use `jj describe -m "..."` without preserving the `Pull Request:`

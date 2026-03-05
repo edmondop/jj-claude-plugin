@@ -18,7 +18,9 @@ Use the `jj-spr-amend-update` skill to guide the amend-update cycle.
 2. `jj edit <change-id>` to make it the working copy
 3. Make the requested code changes
 4. **MANDATORY:** `jj new <change-id>` to reposition `@`
-5. `jj spr diff -r <change-id>` to update the PR
-6. If the change is in the middle of a stack, update the full range
+5. Update the PR — always pass `-m` to avoid interactive prompt:
+   `jj spr diff -m "addressed feedback" -r <change-id>`
+6. If the change is in the middle of a stack, update the full range:
+   `jj spr diff -m "updated mid-stack" -r <change-id>::<top>`
 
 Never skip step 4. The user must be able to review with `jj diff -r @-`.

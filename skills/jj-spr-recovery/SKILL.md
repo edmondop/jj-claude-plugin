@@ -89,15 +89,29 @@ Proposed recovery:
 
 ## Step 2: Close Stale/Orphaned PRs
 
+**Prefer `jj spr close`** — it closes the PR, strips the `Pull Request:`
+URL from the commit message, and deletes both head and synthetic base
+branches:
+
+```bash
+# Close a single PR (also strips URL and deletes branches)
+jj spr close -r <change>
+
+# Close a range
+jj spr close -r <bottom>::<top>
+```
+
+If `jj spr close` isn't available (sandboxed, SPR broken), fall back to:
+
 ```bash
 gh pr close <number> --delete-branch
 ```
 
+Then you must manually strip URLs in Step 4.
+
 Close PRs in this order:
 1. Orphaned PRs (empty local change, PR is open)
 2. PRs targeting stale synthetic bases that will be recreated
-
-**Always use `--delete-branch`** to clean up SPR's remote branches.
 
 ## Step 3: Abandon Ghost Changes
 
@@ -111,7 +125,10 @@ jj abandon <empty-change-id>
 **Verify the change is truly empty before abandoning.** Check with
 `jj diff -r <id>` — an empty diff confirms it's a ghost.
 
-## Step 4: Strip Pull Request URLs
+## Step 4: Strip Pull Request URLs (skip if Step 2 used `jj spr close`)
+
+`jj spr close` already strips URLs. This step is only needed if PRs were
+closed via `gh pr close` or the GitHub UI.
 
 Remove stale `Pull Request:` lines from all changes that will get new PRs:
 

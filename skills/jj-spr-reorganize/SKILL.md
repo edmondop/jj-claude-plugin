@@ -1,6 +1,6 @@
 ---
 name: jj-spr-reorganize
-description: Use when reorganizing a jj change stack that has existing PRs. Triggers on "reorganize stack", "rebase changes", "squash changes", "split change", "reorder PRs", or after restructuring a stack that had open PRs.
+description: Use when reorganizing a jj change stack that has existing PRs. Triggers on "reorganize stack", "rebase changes", "squash changes", "split change", "reorder PRs", "remove PR from stack", or after restructuring a stack that had open PRs.
 ---
 
 # jj SPR Stack Reorganization
@@ -19,145 +19,126 @@ fi
 SPR requires `.git/` which only exists in the main colocated repo, not in
 workspaces. All `jj spr` commands must run from the main repo.
 
-## Overview
+## How SPR Handles Reorganization
 
-Reorganizing a stack (rebase, squash, split, reorder) when PRs already exist
-is the most dangerous SPR operation. SPR tracks PRs solely via
-`Pull Request:` URLs in commit messages. After reorganization, old URLs are
-stale and will cause errors or wrong updates.
+SPR tracks PRs via `Pull Request:` URLs in commit messages. When you run
+`jj spr diff -r <range>`:
 
-**The only safe path is: close → clean → reorganize → recreate.**
+- Changes **with** a `Pull Request:` URL → SPR **updates** the existing PR
+- Changes **without** a URL → SPR **creates** a new PR
 
-## Why Close-and-Recreate?
+This means you do NOT need to close all PRs when reorganizing. You only
+close the PRs for changes that are being removed or fundamentally altered.
+Changes that keep their `Pull Request:` URL will have their PRs updated
+in place.
 
-- `Pull Request:` URLs are SPR's ONLY tracking mechanism
-- Stale URLs point to closed or wrong PRs
-- Partial cleanup (updating some URLs) is fragile and error-prone
-- A clean slate is the only reliable approach
+`jj spr close -r <change>` handles cleanup for a single PR:
+1. Closes the PR on GitHub
+2. Strips `Pull Request:` and `Reviewed By:` from the commit description
+3. Deletes both the head branch and synthetic base branch
 
-## Step 1: Close All Affected PRs
+## Decision Tree
 
-Close every PR in the range you're about to reorganize:
+### Removing a change from the stack (squash into another)
 
-```bash
-# List current PRs to know what to close
-jj spr list
-
-# Close each one (deletes the remote branch too)
-gh pr close <number-1> --delete-branch
-gh pr close <number-2> --delete-branch
-# ... repeat for all affected PRs
-```
-
-**Do not skip `--delete-branch`.** Leftover SPR branches cause confusion.
-
-## Step 2: Strip Stale `Pull Request:` URLs
-
-**A single leftover URL will cause SPR to try to update a closed PR.**
-
-Use this loop to strip all `Pull Request:` lines from a set of changes:
+Only the removed change's PR needs to close. All other PRs stay.
 
 ```bash
-for c in <change-id-1> <change-id-2> ...; do
-  desc=$(jj log --no-graph -r "$c" -T 'description')
-  clean=$(echo "$desc" | grep -v 'Pull Request:' | sed '/^$/N;/^\n$/d')
-  echo "--- $c ---"
-  echo "Before: $(echo "$desc" | grep 'Pull Request:' || echo '(none)')"
-  jj desc -r "$c" -m "$clean"
-  echo
-done
-```
+# 1. Close just the PR being removed
+jj spr close -r <change-to-remove>
 
-**What this does:**
-1. Reads the current description for each change
-2. Removes lines containing `Pull Request:`
-3. Collapses doubled blank lines left behind
-4. Rewrites the description
-5. Prints before/after for verification
+# 2. Squash it into its target
+jj squash --from <change-to-remove> --into <target>
 
-To get the list of change IDs in the stack:
+# 3. Update remaining PRs (pass -m to avoid interactive prompt)
+jj spr diff -m "squashed change" -r <bottom>::<top>
 
-```bash
-jj log -r 'ancestors(@, 20) & ~ancestors(trunk(), 1)' \
-  -T 'change_id.short() ++ "\n"' --no-graph
-```
-
-**Note:** `jj desc` works from workspaces — no need to `cd` to the main
-repo for this step. Only `jj spr` commands require `.git/`.
-
-## Step 3: Perform the Reorganization
-
-Now that PRs are closed and URLs are stripped, use standard jj commands:
-
-### Rebase (move a change to a new parent)
-```bash
-jj rebase -r <change> -d <new-parent>
-```
-
-### Squash (fold a change into its parent)
-```bash
-jj squash -r <change>
-```
-
-### Split (break one change into two)
-```bash
-jj split -r <change>
-```
-
-### Reorder (move changes around in the stack)
-```bash
-jj rebase -r <change> --after <target>
-# or
-jj rebase -r <change> --before <target>
-```
-
-## Step 4: Verify the New Stack
-
-```bash
-jj log
-```
-
-Confirm:
-- Changes are in the desired order
-- No unexpected conflicts
-- Commit messages are clean (no stale `Pull Request:` URLs)
-
-## Step 5: Recreate PRs
-
-```bash
-jj spr diff -r <first-change>::<last-change>
-```
-
-SPR creates fresh PRs with correct base branch chaining.
-
-## Step 6: Reposition `@`
-
-```bash
+# 4. Reposition @
 jj new <top-of-stack>
 ```
 
-`@` is now an empty change above the stack. Ready for new work.
+### Splitting a change into two
 
-## Quick Reference
+The original PR stays on one half. The new half gets a new PR.
 
+```bash
+# 1. Split the change (interactive file selection)
+jj split -r <change>
+
+# 2. Update the stack — SPR updates the PR on the half that kept
+#    the URL, creates a new PR for the half without one
+jj spr diff -m "split change" -r <bottom>::<top>
 ```
-1. jj spr list                              # note PR numbers
-2. gh pr close <N> --delete-branch           # for each PR
-3. jj desc <id> -m "<clean message>"         # for each change
-4. jj rebase / squash / split               # reorganize
-5. jj log                                    # verify shape
-6. jj spr diff -r <range>                   # recreate PRs
-7. jj new <top>                              # reposition @
+
+### Reordering changes
+
+Close PRs for changes whose position changed, then update the stack.
+
+```bash
+# 1. Close PRs for changes being moved
+jj spr close -r <change-being-moved>
+
+# 2. Reorder
+jj rebase -r <change> --after <target>
+
+# 3. Update stack — moved change gets a new PR, others are updated
+jj spr diff -m "reordered stack" -r <bottom>::<top>
 ```
+
+### Full reorganization (everything changes)
+
+When the stack structure changes fundamentally (e.g., rewriting history),
+close all PRs and recreate.
+
+```bash
+# 1. Close all PRs in the range
+jj spr close -r <bottom>::<top>
+
+# 2. Reorganize freely
+jj rebase / squash / split / etc.
+
+# 3. Verify the new stack
+jj log
+
+# 4. Recreate PRs
+jj spr diff -r <new-bottom>::<new-top>
+
+# 5. Reposition @
+jj new <top-of-stack>
+```
+
+## Important: Always Pass `-m` When Updating
+
+When `jj spr diff` updates an existing PR (not creating), it prompts
+interactively for an update message if `-m` is not provided. **Always
+pass `-m`** to avoid blocking on a prompt:
+
+```bash
+jj spr diff -m "reorganized stack" -r <range>
+```
+
+## Verify Before Updating
+
+Always dry-run before pushing:
+
+```bash
+jj spr diff --dry-run -r <bottom>::<top>
+```
+
+Check that:
+- The correct number of PRs would be created/updated
+- Changes with existing URLs show "UPDATE" (not "CREATE")
+- Changes without URLs show "CREATE"
 
 ## Common Mistakes
 
-- **Reorganizing without closing PRs first** — stale URLs cause SPR to
-  update wrong PRs or error out
-- **Forgetting to strip `Pull Request:` URLs** — even one leftover URL
-  means SPR thinks a PR already exists for that change
-- **Trying to be clever with partial cleanup** — updating some URLs while
-  keeping others. This is fragile. Always do a full close-and-recreate.
-- **Not verifying the stack shape before recreating** — if the stack has
-  conflicts or wrong order, PRs will be created in the wrong state
-- **Leaving `@` on a PR change** — always `jj new` after reorganization
+- **Closing all PRs when only one is being removed** — wasteful and loses
+  review history. Use `jj spr close -r <single-change>` instead.
+- **Forgetting `-m` on `jj spr diff`** — causes an interactive prompt that
+  blocks automation. Always pass `-m "reason"`.
+- **Not verifying the stack shape before updating** — run `jj log` and
+  `jj spr diff --dry-run` first.
+- **Leaving `@` on a PR change** — always `jj new` after reorganization.
+- **Using `gh pr close` instead of `jj spr close`** — `gh pr close` does
+  NOT strip the `Pull Request:` URL from the commit description or delete
+  the synthetic base branch. Always use `jj spr close`.
