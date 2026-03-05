@@ -210,6 +210,10 @@ If someone already merged a stacked PR on GitHub directly:
    get the changes onto master (cherry-pick, or close and recreate).
 3. Clean up orphan branches: `jj spr cleanup --confirm`
 
+**If the stack is severely broken** (multiple stale bases, ghost changes,
+orphaned PRs), use the `jj-spr-recovery` skill or `/spr-recover` command
+for a full diagnosis and recovery.
+
 ## Common Mistakes
 
 - **Landing from the middle of a stack** -- leaves upper PRs orphaned with

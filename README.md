@@ -15,6 +15,10 @@ Provides skills and slash commands for the full jj + SPR lifecycle:
 - **`/spr-amend`** — Amend a change and update its PR
 - **`/spr-land`** — Land a PR and clean up
 - **`/spr-reorg`** — Reorganize a stack with existing PRs
+- **`/spr-health`** — Diagnose stack health (read-only)
+- **`/spr-recover`** — Recover a broken stack (stale PRs, ghost changes)
+- **`/spr-status`** — Show change-to-PR mapping
+- **`/spr-clean`** — Strip stale PR URLs from commit messages
 
 ## Install
 
@@ -38,6 +42,7 @@ claude --plugin-dir /path/to/jj-spr-claude-plugin
 | `jj-spr-amend-update` | "update PR", "address review feedback", "amend and push" |
 | `jj-spr-landing` | "land PR", "merge PR", "spr land", "ship it" |
 | `jj-spr-reorganize` | "reorganize stack", "rebase changes", "squash changes" |
+| `jj-spr-recovery` | "fix stack", "recover PRs", "stale PRs", "ghost changes", "stack is broken" |
 
 ## Key Convention
 
