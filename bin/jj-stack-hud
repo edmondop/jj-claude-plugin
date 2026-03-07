@@ -37,14 +37,19 @@ reverse_lines() {
 
 # --- detect jj repo ---
 
-[ -d ".jj" ] || not_jj_repo
 command -v jj >/dev/null 2>&1 || not_jj_repo
+jj root >/dev/null 2>&1 || not_jj_repo
 
 SPAN=$((DEPTH + 1))
 
 # Use unit separator as delimiter — avoids sed/regex parsing entirely
-# Fields: marker, change_id, description
-JJ_TEMPLATE="if(current_working_copy, \"@\", \"-\") ++ \"${SEP}\" ++ change_id.short(8) ++ \"${SEP}\" ++ description.first_line() ++ \"\n\""
+# Fields: marker, change_id, description_first_line, description_json_escaped
+JJ_TEMPLATE="if(current_working_copy, \"@\", \"-\") ++ \"${SEP}\" ++ change_id.short(8) ++ \"${SEP}\" ++ description.first_line() ++ \"${SEP}\" ++ description.escape_json() ++ \"\n\""
+
+# Extract PR number from a JSON-escaped description (newlines are literal \n)
+extract_pr_number() {
+  printf '%s' "$1" | grep -oE 'pull/[0-9]+' | head -1 | cut -d/ -f2
+}
 REVSET="(ancestors(@, ${SPAN}) | descendants(@, ${SPAN})) & trunk().."
 
 RAW=$(jj log --no-graph -r "$REVSET" -T "$JJ_TEMPLATE" 2>/dev/null) || not_jj_repo
@@ -65,11 +70,13 @@ format_horizontal() {
   local parts=()
   local found_current=false
 
-  while IFS="$SEP" read -r marker cid desc; do
+  while IFS="$SEP" read -r marker cid desc desc_json; do
     [ -z "$marker" ] && continue
     desc="${desc:0:150}"
     [ -z "$desc" ] && desc="(empty)"
     cid="${cid:0:4}"
+    local pr
+    pr=$(extract_pr_number "$desc_json")
 
     local prefix
     if [ "$marker" = "@" ]; then
@@ -81,7 +88,11 @@ format_horizontal() {
       prefix="↓"
     fi
 
-    parts+=("${prefix} ${cid} ${desc}")
+    if [ -n "$pr" ]; then
+      parts+=("${prefix} ${cid} ${desc} #${pr}")
+    else
+      parts+=("${prefix} ${cid} ${desc}")
+    fi
   done <<< "$reversed"
 
   local result="${parts[0]}"
@@ -95,11 +106,14 @@ format_vertical() {
   local lines=()
   local found_current=false
 
-  while IFS="$SEP" read -r marker cid desc; do
+  while IFS="$SEP" read -r marker cid desc desc_json; do
     [ -z "$marker" ] && continue
     desc="${desc:0:150}"
     [ -z "$desc" ] && desc="(empty)"
     cid="${cid:0:4}"
+    local pr
+    pr=$(extract_pr_number "$desc_json")
+    [ -n "$pr" ] && desc="${desc} #${pr}"
 
     if [ "$marker" = "@" ]; then
       lines+=("  @ ${cid} ${desc}")
