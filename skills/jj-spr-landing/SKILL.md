@@ -5,6 +5,13 @@ description: Use when landing (merging) a PR via SPR and cleaning up afterward. 
 
 # jj SPR Landing
 
+## Base Bookmark Convention
+
+This skill uses a `dev` bookmark as the rebase target — it sits one
+commit on top of `master@origin`. **If `dev` doesn't exist in the repo,
+use `main@origin` or `master@origin` as the rebase target instead.**
+Check with: `jj bookmark list | grep '^dev'`
+
 ## Workspace Detection (MUST check first)
 
 **Before running ANY SPR command, check if you're in a jj workspace.**

@@ -5,6 +5,13 @@ description: Use when a jj+SPR stack is in a bad state after out-of-order merges
 
 # jj SPR Stack Recovery
 
+## Base Bookmark Convention
+
+This skill uses a `dev` bookmark as the rebase target and `dev..` as the
+stack revset. **If `dev` doesn't exist, use `trunk()..` for revsets and
+`main@origin` or `master@origin` as the rebase target.** Check with:
+`jj bookmark list | grep '^dev'`
+
 ## Workspace Detection (MUST check first)
 
 ```bash
@@ -31,7 +38,7 @@ close stale PRs, abandon ghost changes, strip URLs, rebase, recreate.
 ### Map changes to PRs
 
 ```bash
-for c in $(jj log -r 'ancestors(@, 20) & dev..' \
+for c in $(jj log -r 'ancestors(@, 20) & dev..  # if dev bookmark doesn't exist, use trunk().. instead' \
   -T 'change_id.short() ++ "\n"' --no-graph); do
   desc=$(jj log -r "$c" --no-graph -T 'description.first_line()')
   url=$(jj log -r "$c" -T 'description' --no-graph \
