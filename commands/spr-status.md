@@ -14,7 +14,7 @@ directory). If so, `cd` to the main colocated repo before proceeding.
 
 1. Get the list of changes in the current stack:
    ```bash
-   jj log -r 'ancestors(@, 20) & ~ancestors(trunk(), 1)' \
+   jj log -r 'ancestors(@, 20) & dev..' \
      -T 'change_id.short() ++ "\n"' --no-graph
    ```
    Adjust the revset if the user specifies a different range.

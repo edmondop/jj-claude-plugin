@@ -17,7 +17,7 @@ This is a **read-only** diagnostic. It never modifies anything.
 ### Step 1: Identify the stack
 
 ```bash
-jj log -r 'ancestors(@, 20) & ~ancestors(trunk(), 1)'
+jj log -r 'ancestors(@, 20) & dev..'
 ```
 
 ### Step 2: Map changes to PRs
@@ -26,7 +26,7 @@ For each change above trunk, extract the `Pull Request:` URL and check
 if the change is empty:
 
 ```bash
-for c in $(jj log -r 'ancestors(@, 20) & ~ancestors(trunk(), 1)' \
+for c in $(jj log -r 'ancestors(@, 20) & dev..' \
   -T 'change_id.short() ++ "\n"' --no-graph); do
   desc=$(jj log -r "$c" --no-graph -T 'description.first_line()')
   url=$(jj log -r "$c" -T 'description' --no-graph \

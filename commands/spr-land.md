@@ -18,9 +18,10 @@ Use the `jj-spr-landing` skill to guide the landing process.
 2. Run pre-checks (approval status, CI)
 3. `jj spr land -r <change-id>`
 4. `jj git fetch`
-5. `jj abandon <landed-change-id>` (now empty, content is on master)
-6. `jj rebase -r @ -d main@origin` (single PR) or
-   `jj rebase -s <next-change> -d main@origin` (stack -- note `-s` not `-r`)
+5. `jj abandon <landed-change-id>` (now empty, content is on remote default branch)
+6. `jj rebase -r dev -d master@origin` (update dev onto latest master)
+7. `jj rebase -r @ -d dev` (single PR) or
+   `jj rebase -s <next-change> -d dev` (stack -- note `-s` not `-r`)
 7. If part of a stack: `jj spr diff -m "rebased after landing" -r <next-change>::<top>`
    to update synthetic base content (always pass `-m` when updating)
 

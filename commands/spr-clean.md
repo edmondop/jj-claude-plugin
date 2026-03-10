@@ -17,7 +17,7 @@ the GitHub UI (which do NOT strip URLs from commit messages).
 1. Determine the affected changes. If the user specifies a range, use it.
    Otherwise, find all changes with `Pull Request:` URLs in the stack:
    ```bash
-   jj log -r 'ancestors(@, 20) & ~ancestors(trunk(), 1)' \
+   jj log -r 'ancestors(@, 20) & dev..' \
      -T 'change_id.short() ++ "\n"' --no-graph
    ```
 

@@ -125,7 +125,7 @@ Before running any SPR command:
 ## CRITICAL: First PR in Range Always Targets Main
 
 **SPR determines the base branch mechanically:** the first commit in the
-range ALWAYS targets `main`/`master`. SPR does NOT look at existing PRs
+range ALWAYS targets the remote default branch (`main`/`master`). SPR does NOT look at existing PRs
 below the range to chain off them.
 
 This means: if there is a parent change below your range that already has

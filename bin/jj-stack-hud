@@ -50,14 +50,14 @@ JJ_TEMPLATE="if(current_working_copy, \"@\", \"-\") ++ \"${SEP}\" ++ change_id.s
 extract_pr_number() {
   printf '%s' "$1" | grep -oE 'pull/[0-9]+' | head -1 | cut -d/ -f2
 }
-REVSET="(ancestors(@, ${SPAN}) | descendants(@, ${SPAN})) & trunk().."
+REVSET="(ancestors(@, ${SPAN}) | descendants(@, ${SPAN})) & dev.."
 
 RAW=$(jj log --no-graph -r "$REVSET" -T "$JJ_TEMPLATE" 2>/dev/null) || not_jj_repo
 
-# If no changes off trunk, show @ with "on trunk" indicator
+# If no changes off dev, show @ with "on dev" indicator
 if [ -z "$RAW" ]; then
   CID=$(jj log --no-graph -r "@" -T 'change_id.short(4)' 2>/dev/null) || not_jj_repo
-  printf '{"lines": ["jj: @ %s (on trunk)"]}\n' "$CID"
+  printf '{"lines": ["jj: @ %s (on dev)"]}\n' "$CID"
   exit 0
 fi
 

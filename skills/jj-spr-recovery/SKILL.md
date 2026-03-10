@@ -31,7 +31,7 @@ close stale PRs, abandon ghost changes, strip URLs, rebase, recreate.
 ### Map changes to PRs
 
 ```bash
-for c in $(jj log -r 'ancestors(@, 20) & ~ancestors(trunk(), 1)' \
+for c in $(jj log -r 'ancestors(@, 20) & dev..' \
   -T 'change_id.short() ++ "\n"' --no-graph); do
   desc=$(jj log -r "$c" --no-graph -T 'description.first_line()')
   url=$(jj log -r "$c" -T 'description' --no-graph \
@@ -81,7 +81,7 @@ Proposed recovery:
   1. Close PRs: #A, #B, #C
   2. Abandon empty changes: id1, id2
   3. Strip URLs from: id3, id4, id5
-  4. Rebase stack onto main@origin
+  4. Rebase stack onto dev
   5. Recreate PRs with jj spr diff
 ```
 
@@ -115,8 +115,8 @@ Close PRs in this order:
 
 ## Step 3: Abandon Ghost Changes
 
-Ghost changes are `(empty)` changes whose content was already merged to
-master. They clutter the graph and serve no purpose.
+Ghost changes are `(empty)` changes whose content was already landed on
+the remote default branch. They clutter the graph and serve no purpose.
 
 ```bash
 jj abandon <empty-change-id>
@@ -146,13 +146,13 @@ done
 
 ```bash
 jj git fetch
-jj rebase -s <bottom-of-stack> -d main@origin
+jj rebase -s <bottom-of-stack> -d dev
 ```
 
 Use `-s` (not `-r`) to rebase the entire subtree.
 
 **After rebase:** Some changes may become empty if their content was already
-on master. Abandon those too.
+on the remote default branch. Abandon those too.
 
 ## Step 6: Recreate PRs
 
@@ -208,7 +208,7 @@ jj new <top-of-stack>
 - **Not getting user confirmation before closing PRs** — always present
   diagnosis and get approval
 - **Abandoning changes that aren't empty** — verify with `jj diff` first
-- **Forgetting `jj git fetch` before rebase** — rebase onto stale master
+- **Forgetting `jj git fetch` before rebase** — rebase onto stale dev/master
   leaves the stack in the same bad state
 - **Skipping the dry-run** — `jj spr diff --dry-run` catches range errors
   before creating duplicate PRs

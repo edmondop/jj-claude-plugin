@@ -56,7 +56,7 @@ Then sync locally:
 
 ```bash
 jj git fetch
-jj rebase -r @ -d main@origin
+jj rebase -r @ -d dev
 ```
 
 ## How SPR Handles Synthetic Bases at Land Time
@@ -94,11 +94,12 @@ jj git fetch
 ### Step 3: Abandon the landed change and rebase remaining stack
 
 ```bash
-# The landed change is now empty (its content is on master)
+# The landed change is now empty (its content is on the remote default branch)
 jj abandon <landed-change-id>
 
-# Rebase the remaining stack onto updated master
-jj rebase -s <next-change> -d main@origin
+# Rebase dev onto updated master@origin, then rebase stack onto dev
+jj rebase -r dev -d master@origin
+jj rebase -s <next-change> -d dev
 ```
 
 Where `<next-change>` is the change that was directly above the landed one.
@@ -148,14 +149,14 @@ If all PRs in a stack are approved, land them one at a time, bottom-up:
 jj spr land -r <change-1>
 jj git fetch
 jj abandon <change-1>
-jj rebase -s <change-2> -d main@origin
+jj rebase -s <change-2> -d dev
 jj spr diff -m "rebased after landing" -r <change-2>::<top>
 
 # Land second
 jj spr land -r <change-2>
 jj git fetch
 jj abandon <change-2>
-jj rebase -s <change-3> -d main@origin
+jj rebase -s <change-3> -d dev
 jj spr diff -m "rebased after landing" -r <change-3>::<top>
 
 # Continue until done
@@ -176,7 +177,7 @@ After all landing is complete:
 ```bash
 # Sync and rebase working copy
 jj git fetch
-jj rebase -r @ -d main@origin
+jj rebase -r @ -d dev
 
 # Verify clean state
 jj log
