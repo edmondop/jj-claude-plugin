@@ -101,8 +101,9 @@ format_horizontal() {
     fi
   done <<< "$reversed"
 
-  local result="${parts[0]}"
-  for ((i=1; i<${#parts[@]}; i++)); do
+  local last=$((${#parts[@]} - 1))
+  local result="${parts[$last]}"
+  for ((i=last-1; i>=0; i--)); do
     result="${result} → ${parts[$i]}"
   done
   echo "$result"
